@@ -1,9 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:tendollar_app/login.dart';
-import 'package:tendollar_app/register.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -25,17 +24,45 @@ class _RegisterState extends State<Register> {
 
   Future register() async {
     if (formStateKey.currentState!.validate()) {
-      setState(() {
-        isLoading = true;
-      });
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailEditingController.text,
-        password: passwordEditingController.text,
-      );
+      try {
+        setState(() {
+          isLoading = true;
+        });
+        var cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailEditingController.text,
+          password: passwordEditingController.text,
+        );
 
-      setState(() {
-        isLoading = false;
-      });
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(cred.user?.uid)
+            .set({
+              "uid": cred.user?.uid,
+              "name": "",
+              "email": emailEditingController.text,
+              "password": passwordEditingController.text,
+            });
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Register Succesfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } on FirebaseException catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message ?? "Some Unknown error"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -190,25 +217,28 @@ class _RegisterState extends State<Register> {
                 ),
 
                 SizedBox(height: 30),
-                GestureDetector(
-                  onTap: () {
-                    formStateKey.currentState?.validate();
-                  },
-                  child: Container(
-                    height: 50,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Color(0xff7df9ff),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Continue",
-                        style: TextStyle(fontFamily: "Kreon", fontSize: 18),
+                isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : GestureDetector(
+                        onTap: register,
+                        child: Container(
+                          height: 50,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Color(0xff7df9ff),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Continue",
+                              style: TextStyle(
+                                fontFamily: "Kreon",
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
                 SizedBox(height: 30),
 
                 SizedBox(

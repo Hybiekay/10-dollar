@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:tendollar_app/login.dart';
@@ -15,11 +17,28 @@ class _RegisterState extends State<Register> {
   TextEditingController passwordEditingController = TextEditingController();
   TextEditingController confrimPasswordEditingController =
       TextEditingController();
-
+  bool isLoading = false;
   bool isObcure = true;
   bool cisObcure = true;
 
   var formStateKey = GlobalKey<FormState>();
+
+  Future register() async {
+    if (formStateKey.currentState!.validate()) {
+      setState(() {
+        isLoading = true;
+      });
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailEditingController.text,
+        password: passwordEditingController.text,
+      );
+
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
